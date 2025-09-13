@@ -1,0 +1,6 @@
+@PerlaMetro_RouteService_HostAddress = http://localhost:5278
+
+GET {{PerlaMetro_RouteService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
