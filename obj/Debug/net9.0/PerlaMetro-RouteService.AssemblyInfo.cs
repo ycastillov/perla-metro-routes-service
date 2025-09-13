@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PerlaMetro-RouteService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7a3cc5649f8ae60e86c6aa76b77d35fdf893736a")]
 [assembly: System.Reflection.AssemblyProductAttribute("PerlaMetro-RouteService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PerlaMetro-RouteService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
