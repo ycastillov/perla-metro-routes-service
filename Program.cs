@@ -1,4 +1,5 @@
 using PerlaMetro_RouteService.Src.Infrastructure.Db;
+using PerlaMetro_RouteService.Src.Mappings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,12 +8,10 @@ builder.Services.AddSingleton<ApplicationDbContext>();
 
 // Servicios de la API
 builder.Services.AddControllers();
+builder.Services.AddAutoMapper(typeof(RouteMappingProfile));
 builder.Services.AddEndpointsApiExplorer();
 
 // builder.Services.AddSwaggerGen();
-
-// Neo4j
-builder.Services.AddSingleton<ApplicationDbContext>();
 
 // builder.Services.AddScoped<RouteRepository>();
 
