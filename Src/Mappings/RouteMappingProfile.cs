@@ -8,9 +8,10 @@ namespace PerlaMetro_RouteService.Src.Mappings
     {
         public RouteMappingProfile()
         {
-            CreateMap<CreateRouteDto, Models.Route>()
+            CreateMap<RouteDto, Models.Route>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid().ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => RouteStatus.Active));
+            CreateMap<Models.Route, RouteDto>();
         }
     }
 }

@@ -10,9 +10,9 @@ namespace PerlaMetro_RouteService.Src.Models
         public string Id { get; set; } = Guid.NewGuid().ToString();
         public string Origin { get; set; } = string.Empty;
         public string Destination { get; set; } = string.Empty;
-        public TimeOnly StartTime { get; set; } = TimeOnly.MinValue;
-        public TimeOnly EndTime { get; set; } = TimeOnly.MinValue;
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
         public List<string> Stops { get; set; } = new();
-        public RouteStatus Status { get; set; } = RouteStatus.Active;
+        public string Status { get; set; } = RouteStatus.Active.ToString();
     }
 }

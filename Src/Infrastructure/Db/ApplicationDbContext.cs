@@ -12,15 +12,22 @@ namespace PerlaMetro_RouteService.Src.Infrastructure.Db
 
         public ApplicationDbContext(IConfiguration configuration)
         {
-            var uri = configuration["Neo4j:Uri"];
-            var user = configuration["Neo4j:User"];
-            var password = configuration["Neo4j:Password"];
+            var uri = Environment.GetEnvironmentVariable("NEO4J_URI");
+            var user = Environment.GetEnvironmentVariable("NEO4J_USER");
+            var password = Environment.GetEnvironmentVariable("NEO4J_PASSWORD");
+
+            if (
+                string.IsNullOrEmpty(uri)
+                || string.IsNullOrEmpty(user)
+                || string.IsNullOrEmpty(password)
+            )
+                throw new Exception("Neo4j environment variables are missing.");
+
             _driver = GraphDatabase.Driver(uri, AuthTokens.Basic(user, password));
         }
 
         public IAsyncSession GetSession()
         {
-            _driver.AsyncSession();
             return _driver.AsyncSession();
         }
 
