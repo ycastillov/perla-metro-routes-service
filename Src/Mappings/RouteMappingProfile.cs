@@ -12,6 +12,7 @@ namespace PerlaMetro_RouteService.Src.Mappings
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid().ToString()))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => RouteStatus.Active));
             CreateMap<Models.Route, RouteDto>();
+            CreateMap<Models.Route, InactiveRouteDto>();
         }
     }
 }

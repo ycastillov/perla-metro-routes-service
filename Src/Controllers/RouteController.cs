@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PerlaMetro_RouteService.Src.DTOs;
 using PerlaMetro_RouteService.Src.Interfaces;
+using PerlaMetro_RouteService.Src.Models;
 
 namespace PerlaMetro_RouteService.Src.Controllers
 {
@@ -27,6 +28,12 @@ namespace PerlaMetro_RouteService.Src.Controllers
             var route = await _routeRepository.GetRouteByGuidAsync(guid);
             if (route == null)
                 return NotFound();
+
+            if (route.Status == RouteStatus.Inactive.ToString())
+            {
+                InactiveRouteDto inactiveDto = _mapper.Map<InactiveRouteDto>(route);
+                return Ok(inactiveDto);
+            }
 
             RouteDto routeDto = _mapper.Map<RouteDto>(route);
             return Ok(routeDto);
@@ -54,8 +61,20 @@ namespace PerlaMetro_RouteService.Src.Controllers
             if (result == null)
                 return StatusCode(500, "An error occurred while updating the route.");
 
-            var resultDto = _mapper.Map<RouteDto>(result);
+            RouteDto resultDto = _mapper.Map<RouteDto>(result);
             return Ok(resultDto);
+        }
+
+        [HttpDelete("{guid}")]
+        // [Authorize]
+        public async Task<IActionResult> DeleteRoute(string guid)
+        {
+            var existingRoute = await _routeRepository.GetRouteByGuidAsync(guid);
+            if (existingRoute == null)
+                return NotFound();
+
+            await _routeRepository.DeleteRouteAsync(guid);
+            return NoContent();
         }
     }
 }

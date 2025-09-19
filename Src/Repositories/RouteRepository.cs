@@ -136,5 +136,11 @@ namespace PerlaMetro_RouteService.Src.Repositories
                 Status = node.Properties["Status"].As<string>(),
             };
         }
+
+        public async Task DeleteRouteAsync(string guid)
+        {
+            await using var session = _context.GetSession();
+            await session.RunAsync(RouteQueries.SoftDeleteRoute, new { id = guid });
+        }
     }
 }
