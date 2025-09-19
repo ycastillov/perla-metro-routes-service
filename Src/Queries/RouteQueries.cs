@@ -19,10 +19,10 @@ namespace PerlaMetro_RouteService.Src.Queries
                 Status: $status
             })";
 
-        // public const string GetAllRoutes =
-        //     @"
-        //     MATCH (r:Route)
-        //     RETURN r";
+        public const string GetAllRoutes =
+            @"
+            MATCH (r:Route)
+            RETURN r";
 
         public const string GetRouteByGuid =
             @"

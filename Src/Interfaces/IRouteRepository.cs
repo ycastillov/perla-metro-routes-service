@@ -6,7 +6,7 @@ namespace PerlaMetro_RouteService.Src.Interfaces
     {
         Task<Models.Route?> GetRouteByGuidAsync(string guid);
 
-        // Task<IEnumerable<Route>> GetAllRoutesAsync();
+        Task<IEnumerable<Models.Route>> GetAllRoutesAsync();
         Task CreateRouteAsync(Models.Route route);
         // Task UpdateRouteAsync(Route route);
         // Task DeleteRouteAsync(string guid);

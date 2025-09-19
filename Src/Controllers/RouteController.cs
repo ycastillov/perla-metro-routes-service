@@ -15,7 +15,7 @@ namespace PerlaMetro_RouteService.Src.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateRoute([FromBody] RouteDto routeDto)
         {
-            Models.Route route = _mapper.Map<Models.Route>(routeDto);
+            var route = _mapper.Map<Models.Route>(routeDto);
             await _routeRepository.CreateRouteAsync(route);
             return CreatedAtAction(nameof(GetRouteByGuid), new { guid = route.Id }, route);
         }
@@ -29,6 +29,14 @@ namespace PerlaMetro_RouteService.Src.Controllers
 
             RouteDto routeDto = _mapper.Map<RouteDto>(route);
             return Ok(routeDto);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAllRoutes()
+        {
+            var routes = await _routeRepository.GetAllRoutesAsync();
+            var routeDtos = _mapper.Map<IEnumerable<RouteDto>>(routes);
+            return Ok(routeDtos);
         }
     }
 }

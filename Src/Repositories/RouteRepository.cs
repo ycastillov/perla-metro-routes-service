@@ -49,5 +49,32 @@ namespace PerlaMetro_RouteService.Src.Repositories
                 }
             );
         }
+
+        public async Task<IEnumerable<Models.Route>> GetAllRoutesAsync()
+        {
+            await using var session = _context.GetSession();
+            var cursor = await session.RunAsync(RouteQueries.GetAllRoutes);
+            var records = await cursor.ToListAsync();
+
+            var routes = new List<Models.Route>();
+            foreach (var record in records)
+            {
+                var node = record["r"].As<INode>();
+                routes.Add(
+                    new Models.Route
+                    {
+                        Id = node.Properties["Id"].As<string>(),
+                        Origin = node.Properties["Origin"].As<string>(),
+                        Destination = node.Properties["Destination"].As<string>(),
+                        StartTime = node.Properties["StartTime"].As<TimeSpan>(),
+                        EndTime = node.Properties["EndTime"].As<TimeSpan>(),
+                        Stops = node.Properties["Stops"].As<List<string>>(),
+                        Status = node.Properties["Status"].As<string>(),
+                    }
+                );
+            }
+
+            return routes;
+        }
     }
 }
