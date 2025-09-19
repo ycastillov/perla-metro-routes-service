@@ -29,16 +29,16 @@ namespace PerlaMetro_RouteService.Src.Queries
             MATCH (r:Route { Id: $id })
             RETURN r";
 
-        // public const string UpdateRoute =
-        //     @"
-        //     MATCH (r:Route { Id: $id })
-        //     SET r.Origin = $origin,
-        //         r.Destination = $destination,
-        //         r.StartTime = $start,
-        //         r.EndTime = $end,
-        //         r.Stops = $stops,
-        //         r.Status = $status
-        //     RETURN r";
+        public const string UpdateRoute =
+            @"
+            MATCH (r:Route { Id: $id })
+            SET r.Origin = $origin,
+                r.Destination = $destination,
+                r.StartTime = $start,
+                r.EndTime = $end,
+                r.Stops = $stops,
+                r.Status = $status
+            RETURN r";
 
         // public const string SoftDeleteRoute =
         //     @"

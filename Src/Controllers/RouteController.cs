@@ -1,4 +1,5 @@
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PerlaMetro_RouteService.Src.DTOs;
 using PerlaMetro_RouteService.Src.Interfaces;
@@ -32,11 +33,29 @@ namespace PerlaMetro_RouteService.Src.Controllers
         }
 
         [HttpGet]
+        // [Authorize]
         public async Task<IActionResult> GetAllRoutes()
         {
             var routes = await _routeRepository.GetAllRoutesAsync();
-            var routeDtos = _mapper.Map<IEnumerable<RouteDto>>(routes);
-            return Ok(routeDtos);
+            return Ok(routes);
+        }
+
+        [HttpPut("{guid}")]
+        public async Task<IActionResult> UpdateRoute(string guid, [FromBody] RouteDto routeDto)
+        {
+            var existingRoute = await _routeRepository.GetRouteByGuidAsync(guid);
+            if (existingRoute == null)
+                return NotFound();
+
+            var updatedRoute = _mapper.Map(routeDto, existingRoute);
+            updatedRoute.Id = guid; // Ensure the ID remains unchanged
+            var result = await _routeRepository.UpdateRouteAsync(updatedRoute);
+
+            if (result == null)
+                return StatusCode(500, "An error occurred while updating the route.");
+
+            var resultDto = _mapper.Map<RouteDto>(result);
+            return Ok(resultDto);
         }
     }
 }
