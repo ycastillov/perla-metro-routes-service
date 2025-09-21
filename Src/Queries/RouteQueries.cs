@@ -9,15 +9,15 @@ namespace PerlaMetro_RouteService.Src.Queries
     {
         public const string CreateRoute =
             @"
-            CREATE (r:Route {
+            MERGE (origin:Station { name: $origin })
+            MERGE (destination:Station { name: $destination })
+            CREATE (origin)-[r:ROUTE {
                 Id: $id,
-                Origin: $origin,
-                Destination: $destination,
                 StartTime: $start,
                 EndTime: $end,
-                Stops: $stops,
                 Status: $status
-            })";
+            }]->(destination)
+            RETURN r";
 
         public const string GetAllRoutes =
             @"

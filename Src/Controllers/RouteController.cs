@@ -18,8 +18,12 @@ namespace PerlaMetro_RouteService.Src.Controllers
         public async Task<IActionResult> CreateRoute([FromBody] RouteDto routeDto)
         {
             var route = _mapper.Map<Models.Route>(routeDto);
-            await _routeRepository.CreateRouteAsync(route);
-            return CreatedAtAction(nameof(GetRouteByGuid), new { guid = route.Id }, route);
+            var createdRoute = await _routeRepository.CreateRouteAsync(route);
+            return CreatedAtAction(
+                nameof(CreateRoute),
+                new { guid = createdRoute.Id },
+                createdRoute
+            );
         }
 
         [HttpGet("{guid}")]
