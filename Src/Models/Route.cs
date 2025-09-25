@@ -13,6 +13,6 @@ namespace PerlaMetro_RouteService.Src.Models
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public List<string>? Stops { get; set; }
-        public string Status { get; set; } = RouteStatus.Active.ToString();
+        public string Status { get; set; } = string.Empty;
     }
 }
