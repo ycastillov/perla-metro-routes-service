@@ -32,6 +32,7 @@ if (app.Environment.IsDevelopment())
 app.UseAuthorization();
 app.MapControllers();
 
+// TODO: Mejorar el seeder
 // Seeder inicial (crear constraints en Neo4j)
 using (var scope = app.Services.CreateScope())
 {

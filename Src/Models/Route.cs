@@ -7,12 +7,12 @@ namespace PerlaMetro_RouteService.Src.Models
 {
     public class Route
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-        public string Origin { get; set; } = string.Empty;
-        public string Destination { get; set; } = string.Empty;
-        public TimeSpan StartTime { get; set; }
-        public TimeSpan EndTime { get; set; }
-        public List<string>? Stops { get; set; }
-        public string Status { get; set; } = string.Empty;
+        public required string Id { get; set; } = Guid.NewGuid().ToString();
+        public required string Origin { get; set; }
+        public required string Destination { get; set; }
+        public required TimeSpan StartTime { get; set; }
+        public required TimeSpan EndTime { get; set; }
+        public required List<string>? Stops { get; set; }
+        public required string Status { get; set; }
     }
 }

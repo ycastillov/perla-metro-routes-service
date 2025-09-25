@@ -94,95 +94,116 @@ namespace PerlaMetro_RouteService.Src.Repositories
         {
             await using var session = _context.GetSession();
 
-            // 1. Obtener la ruta actual
+            // 1) leer ruta existente
             var existing = await GetRouteByGuidAsync(route.Id);
-            if (existing == null)
-                return null;
+            if (existing == null) return null;
 
-            // 2. Mergear propiedades
-            var finalRoute = new Models.Route
+            // 3) determinar origin/destination finales (mantener existentes si no se envían)
+            var finalOrigin = string.IsNullOrWhiteSpace(route.Origin) ? existing.Origin : route.Origin.Trim();
+            var finalDestination = string.IsNullOrWhiteSpace(route.Destination) ? existing.Destination : route.Destination.Trim();
+
+            // 2) calcular finalStops respetando null vs empty:
+            //    - route.Stops == null => conservar existing.Stops
+            //    - route.Stops == []   => quitar todas las paradas
+            //    - route.Stops != null && >0 => reemplazar por las enviadas
+            var stopsProvided = route.Stops != null; // explicit instruction
+            var finalStops = stopsProvided
+                ? route.Stops.Where(s => !string.IsNullOrWhiteSpace(s))
+                             .Select(s => s.Trim())
+                             .Where(s => s != finalOrigin && s != finalDestination)
+                             .ToList()
+                : (existing.Stops ?? new List<string>());
+
+            // 4) sanitizar finalStops: quitar vacíos y evitar que coincidan con origin/destination
+            finalStops = finalStops
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Where(s => s != finalOrigin && s != finalDestination)
+                .ToList();
+
+            // 5) construir stationNames en el orden exacto a recrear
+            var stationNames = new List<string> { finalOrigin };
+            stationNames.AddRange(finalStops);
+            stationNames.Add(finalDestination);
+
+            // 6) decidir si debemos reconstruir estructura:
+            bool originChanged = route.Origin != null && route.Origin != existing.Origin;
+            bool destinationChanged = route.Destination != null && route.Destination != existing.Destination;
+
+            bool shouldRebuild = stopsProvided || originChanged || destinationChanged;
+
+            // 7) si rebuild -> borrar relaciones y recrear segmentos en TX; devolvemos finalRoute construido en C#
+            if (shouldRebuild)
             {
-                Id = route.Id,
-                Origin = string.IsNullOrEmpty(route.Origin) ? existing.Origin : route.Origin,
-                Destination = string.IsNullOrEmpty(route.Destination)
-                    ? existing.Destination
-                    : route.Destination,
-                Stops = route.Stops ?? existing.Stops, // Changed this line
-                StartTime = route.StartTime != default ? route.StartTime : existing.StartTime,
-                EndTime = route.EndTime != default ? route.EndTime : existing.EndTime,
-                Status = !string.IsNullOrEmpty(route.Status) ? route.Status : existing.Status,
+                var tx = await session.BeginTransactionAsync();
+                try
+                {
+                    // borrar relaciones existentes para el id (simple y seguro)
+                    await tx.RunAsync(RouteQueries.DeleteRouteRelationships, new { id = route.Id });
+
+                    // crear cada segmento (pares consecutivos)
+                    for (int i = 0; i < stationNames.Count - 1; i++)
+                    {
+                        await tx.RunAsync(RouteQueries.CreateSegment, new
+                        {
+                            from = stationNames[i],
+                            to = stationNames[i + 1],
+                            id = route.Id,
+                            start = (route.StartTime != default ? route.StartTime : existing.StartTime).ToString(),
+                            end = (route.EndTime != default ? route.EndTime : existing.EndTime).ToString(),
+                            status = !string.IsNullOrEmpty(route.Status) ? route.Status : existing.Status
+                        });
+                    }
+
+                    await tx.CommitAsync();
+
+                    // Devolver el objeto resultante (sabemos exactamente lo que creamos)
+                    return new Models.Route
+                    {
+                        Id = route.Id,
+                        Origin = finalOrigin,
+                        Destination = finalDestination,
+                        Stops = finalStops,
+                        StartTime = (route.StartTime != default ? route.StartTime : existing.StartTime),
+                        EndTime = (route.EndTime != default ? route.EndTime : existing.EndTime),
+                        Status = !string.IsNullOrEmpty(route.Status) ? route.Status : existing.Status
+                    };
+                }
+                catch
+                {
+                    await tx.RollbackAsync();
+                    throw;
+                }
+            }
+
+            // 8) si no rebuild -> solo actualizar propiedades de las relaciones existentes
+            var parameters = new
+            {
+                id = route.Id,
+                start = (route.StartTime != default ? route.StartTime : existing.StartTime).ToString(),
+                end = (route.EndTime != default ? route.EndTime : existing.EndTime).ToString(),
+                status = !string.IsNullOrEmpty(route.Status) ? route.Status : existing.Status
             };
 
-            // 3. Reconstruir siempre si cambian paradas (incluso si es lista vacía),
-            // O si cambia origen/destino
-            bool rebuild =
-                (route.Stops != null) // Changed this condition
-                || (!string.IsNullOrEmpty(route.Origin) && route.Origin != existing.Origin)
-                || (
-                    !string.IsNullOrEmpty(route.Destination)
-                    && route.Destination != existing.Destination
-                );
+            var cursor = await session.RunAsync(RouteQueries.UpdateRouteProperties, parameters);
+            var record = await cursor.SingleAsync(); // LIMIT 1 en la query evita multiples rows
+            if (record == null) return null;
 
-            if (rebuild)
+            var stations = record["stations"].As<List<string>>();
+            var rel = record["rel"].As<IRelationship>();
+
+            return new Models.Route
             {
-                var parameters = new
-                {
-                    id = finalRoute.Id,
-                    origin = finalRoute.Origin,
-                    destination = finalRoute.Destination,
-                    stops = finalRoute.Stops,
-                    start = finalRoute.StartTime.ToString(),
-                    end = finalRoute.EndTime.ToString(),
-                    status = finalRoute.Status,
-                };
-
-                var cursor = await session.RunAsync(RouteQueries.RebuildRoute, parameters);
-                var record = await cursor.SingleAsync();
-                var rel = record["rel"].As<IRelationship>();
-
-                return new Models.Route
-                {
-                    Id = rel.Properties["Id"].As<string>(),
-                    Origin = finalRoute.Origin,
-                    Destination = finalRoute.Destination,
-                    Stops = finalRoute.Stops,
-                    StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
-                    EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
-                    Status = rel.Properties["Status"].As<string>(),
-                };
-            }
-            else
-            {
-                // 4. Solo actualizar atributos
-                var parameters = new
-                {
-                    id = finalRoute.Id,
-                    start = finalRoute.StartTime.ToString(),
-                    end = finalRoute.EndTime.ToString(),
-                    status = finalRoute.Status,
-                };
-
-                var cursor = await session.RunAsync(RouteQueries.UpdateRouteProperties, parameters);
-                var record = await cursor.SingleAsync();
-
-                if (record == null)
-                    return null;
-
-                var stations = record["stations"].As<List<string>>();
-                var rel = record["rel"].As<IRelationship>();
-
-                return new Models.Route
-                {
-                    Id = rel.Properties["Id"].As<string>(),
-                    Origin = stations.FirstOrDefault() ?? string.Empty,
-                    Destination = stations.LastOrDefault() ?? string.Empty,
-                    Stops = stations.Skip(1).Take(stations.Count - 2).ToList(),
-                    StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
-                    EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
-                    Status = rel.Properties["Status"].As<string>(),
-                };
-            }
+                Id = rel.Properties["Id"].As<string>(),
+                Origin = stations.FirstOrDefault() ?? existing.Origin,
+                Destination = stations.LastOrDefault() ?? existing.Destination,
+                Stops = stations.Count > 2 ? stations.Skip(1).Take(stations.Count - 2).ToList() : new List<string>(),
+                StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
+                EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
+                Status = rel.Properties["Status"].As<string>(),
+            };
         }
+
 
         public async Task DeleteRouteAsync(string guid)
         {
