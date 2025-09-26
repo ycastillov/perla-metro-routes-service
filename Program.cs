@@ -1,41 +1,44 @@
+using DotNetEnv;
+using PerlaMetro_RouteService.Src.Infrastructure.Db;
+using PerlaMetro_RouteService.Src.Interfaces;
+using PerlaMetro_RouteService.Src.Mappings;
+using PerlaMetro_RouteService.Src.Repositories;
+
+Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Neo4j connection
+builder.Services.AddSingleton<ApplicationDbContext>();
+
+builder.Services.AddScoped<IRouteRepository, RouteRepository>();
+
+builder.Services.AddControllers();
+builder.Services.AddAutoMapper(typeof(RouteMappingProfile).Assembly);
+builder.Services.AddEndpointsApiExplorer();
+
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// Middleware global de errores
+// app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
-var summaries = new[]
+// TODO: Mejorar el seeder
+// Seeder inicial (crear constraints en Neo4j)
+using (var scope = app.Services.CreateScope())
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    var neo4j = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    using var session = neo4j.GetSession();
+    await session.RunAsync("CREATE CONSTRAINT IF NOT EXISTS FOR (r:Route) REQUIRE r.Id IS UNIQUE");
+}
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
