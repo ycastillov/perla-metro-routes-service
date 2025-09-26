@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
 namespace PerlaMetro_RouteService.Src.Models
 {
     public class Route
@@ -12,7 +7,7 @@ namespace PerlaMetro_RouteService.Src.Models
         public required string Destination { get; set; }
         public required TimeSpan StartTime { get; set; }
         public required TimeSpan EndTime { get; set; }
-        public required List<string>? Stops { get; set; }
+        public List<string>? Stops { get; set; } = null;
         public required string Status { get; set; }
     }
 }

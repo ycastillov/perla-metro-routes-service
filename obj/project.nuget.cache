@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9Ymt4vQGs6U=",
+  "dgSpecHash": "MCFtsQFAixY=",
   "success": true,
-  "projectFilePath": "C:\\Users\\yamca\\OneDrive\\Desktop\\Yamir\\Universidad\\Semestre 8\\Arquitectura de Sistemas\\perla-metro-routes-service\\PerlaMetro-RouteService.csproj",
+  "projectFilePath": "D:\\Yamir\\Universidad\\Semestre 8\\Arquitectura de Sistemas\\Taller 1\\PerlaMetro-RoutesService\\PerlaMetro-RouteService.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\yamca\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\yamca\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
