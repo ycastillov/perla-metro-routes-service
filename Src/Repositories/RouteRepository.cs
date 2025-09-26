@@ -100,97 +100,88 @@ namespace PerlaMetro_RouteService.Src.Repositories
         // ---------------------------
         // Actualizar ruta
         // ---------------------------
-        public async Task<Models.Route?> UpdateRouteAsync(Models.Route route)
+        public async Task<Models.Route?> UpdateRouteAsync(
+            Models.Route route,
+            bool originProvided,
+            bool destinationProvided,
+            bool stopsProvided
+        )
         {
             await using var session = _context.GetSession();
 
-            // 1. Obtener la ruta actual
             var existing = await GetRouteByGuidAsync(route.Id);
             if (existing == null)
                 return null;
 
-            // 2. Determinar valores finales
-            var finalRoute = new Models.Route
+            // Decidir qué query ejecutar
+            if (stopsProvided)
             {
-                Id = route.Id,
-                Origin = string.IsNullOrEmpty(route.Origin) ? existing.Origin : route.Origin,
-                Destination = string.IsNullOrEmpty(route.Destination)
-                    ? existing.Destination
-                    : route.Destination,
-                Stops = route.Stops switch
-                {
-                    null => existing.Stops, // mantener
-                    { Count: 0 } => new List<string>(), // borrar todas
-                    _ => route.Stops, // reemplazar
-                },
-                StartTime = route.StartTime != default ? route.StartTime : existing.StartTime,
-                EndTime = route.EndTime != default ? route.EndTime : existing.EndTime,
-                Status = !string.IsNullOrEmpty(route.Status) ? route.Status : existing.Status,
-            };
-
-            // 3. Si hay que reconstruir (cambio de stops o de estaciones)
-            if (
-                route.Stops != null
-                || !string.IsNullOrEmpty(route.Origin)
-                || !string.IsNullOrEmpty(route.Destination)
-            )
-            {
+                // Reemplazar paradas (incluso [] = borrar todas)
                 var parameters = new
                 {
-                    id = finalRoute.Id,
-                    origin = finalRoute.Origin,
-                    destination = finalRoute.Destination,
-                    stops = finalRoute.Stops ?? new List<string>(),
-                    start = finalRoute.StartTime.ToString(),
-                    end = finalRoute.EndTime.ToString(),
-                    status = finalRoute.Status,
+                    id = route.Id,
+                    origin = route.Origin,
+                    destination = route.Destination,
+                    stops = route.Stops ?? new List<string>(),
+                    start = route.StartTime.ToString(),
+                    end = route.EndTime.ToString(),
+                    status = route.Status,
                 };
-
-                var cursor = await session.RunAsync(RouteQueries.RebuildRoute, parameters);
+                var cursor = await session.RunAsync(RouteQueries.UpdateRouteStops, parameters);
                 var record = await cursor.SingleAsync();
-
-                var stations = record["stations"].As<List<string>>();
-                var rel = record["rel"].As<IRelationship>();
-
-                return new Models.Route
+                return MapRouteRecord(record);
+            }
+            else if (originProvided || destinationProvided)
+            {
+                // Cambiar origen/destino manteniendo paradas actuales
+                var parameters = new
                 {
-                    Id = rel.Properties["Id"].As<string>(),
-                    Origin = stations.First(),
-                    Destination = stations.Last(),
-                    Stops = stations.Skip(1).Take(stations.Count - 2).ToList(),
-                    StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
-                    EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
-                    Status = rel.Properties["Status"].As<string>(),
+                    id = route.Id,
+                    origin = route.Origin,
+                    destination = route.Destination,
+                    start = route.StartTime.ToString(),
+                    end = route.EndTime.ToString(),
+                    status = route.Status,
                 };
+                var cursor = await session.RunAsync(RouteQueries.UpdateRouteEndpoints, parameters);
+                var record = await cursor.SingleAsync();
+                return MapRouteRecord(record);
             }
             else
             {
-                // 4. Si no hay cambios en stops/origin/destination → solo propiedades
+                // Solo propiedades
                 var parameters = new
                 {
-                    id = finalRoute.Id,
-                    start = finalRoute.StartTime.ToString(),
-                    end = finalRoute.EndTime.ToString(),
-                    status = finalRoute.Status,
+                    id = route.Id,
+                    start = route.StartTime.ToString(),
+                    end = route.EndTime.ToString(),
+                    status = route.Status,
                 };
-
                 var cursor = await session.RunAsync(RouteQueries.UpdateRouteProperties, parameters);
                 var record = await cursor.SingleAsync();
-
-                var stations = record["stations"].As<List<string>>();
-                var rel = record["rel"].As<IRelationship>();
-
-                return new Models.Route
-                {
-                    Id = rel.Properties["Id"].As<string>(),
-                    Origin = stations.FirstOrDefault() ?? string.Empty,
-                    Destination = stations.LastOrDefault() ?? string.Empty,
-                    Stops = stations.Skip(1).Take(stations.Count - 2).ToList(),
-                    StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
-                    EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
-                    Status = rel.Properties["Status"].As<string>(),
-                };
+                return MapRouteRecord(record);
             }
+        }
+
+        // 🔹 Método auxiliar de mapeo
+        private Models.Route? MapRouteRecord(IRecord record)
+        {
+            if (record == null)
+                return null;
+
+            var stations = record["stations"].As<List<string>>();
+            var rel = record["rel"].As<IRelationship>();
+
+            return new Models.Route
+            {
+                Id = rel.Properties["Id"].As<string>(),
+                Origin = stations.First(),
+                Destination = stations.Last(),
+                Stops = stations.Skip(1).Take(stations.Count - 2).ToList(),
+                StartTime = TimeSpan.Parse(rel.Properties["StartTime"].As<string>()),
+                EndTime = TimeSpan.Parse(rel.Properties["EndTime"].As<string>()),
+                Status = rel.Properties["Status"].As<string>(),
+            };
         }
 
         // ---------------------------

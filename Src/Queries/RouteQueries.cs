@@ -29,46 +29,14 @@ namespace PerlaMetro_RouteService.Src.Queries
         // Obtener todas las rutas (agrupadas por Id)
         public const string GetAllRoutes =
             @"
-            MATCH path=(origin:Station)-[r:ROUTE*]->(dest:Station)
-            WITH r[0] AS rel, [n IN nodes(path) | n.name] AS stations, length(path) AS len
+            MATCH path=(origin:Station)-[rels:ROUTE*]->(dest:Station)
+            WITH rels[0] AS rel, [n IN nodes(path) | n.name] AS stations, length(path) AS len
             ORDER BY len DESC
-            RETURN DISTINCT rel.Id AS id, stations, rel
+            WITH rel.Id AS id, collect({stations: stations, rel: rel, len: len}) AS candidates
+            RETURN id, candidates[0].stations AS stations, candidates[0].rel AS rel
         ";
 
-        // Reconstruir ruta (cuando cambian stops, origen o destino)
-        public const string RebuildRoute =
-            @"
-            // 1. Eliminar relaciones antiguas
-            MATCH path=(o:Station)-[rels:ROUTE*]->(d:Station)
-            WHERE ALL(r IN rels WHERE r.Id = $id)
-            WITH rels
-            FOREACH (r IN rels | DELETE r)
-
-            // 2. Crear estaciones de origen y destino
-            MERGE (s0:Station { name: $origin })
-            MERGE (sLast:Station { name: $destination })
-
-            // 3. Manejo de paradas (si se envían)
-            WITH s0, sLast, $stops AS stops
-            UNWIND stops AS stopName
-            MERGE (s:Station { name: stopName })
-            WITH s0, sLast, collect(s) AS stopNodes
-
-            // 4. Construir lista completa
-            WITH [s0] + stopNodes + [sLast] AS stations
-
-            // 5. Crear relaciones ROUTE
-            UNWIND range(0, size(stations)-2) AS i
-            WITH stations, stations[i] AS a, stations[i+1] AS b
-            MERGE (a)-[r:ROUTE { Id: $id }]->(b)
-            SET r.StartTime = $start,
-                r.EndTime = $end,
-                r.Status = $status
-            WITH stations, collect(r) AS rels
-            RETURN stations, rels[0] AS rel
-        ";
-
-        // Actualizar propiedades sin reconstruir la ruta
+        // Actualizar solo propiedades (Status, StartTime, EndTime)
         public const string UpdateRouteProperties =
             @"
             MATCH path=(origin:Station)-[rels:ROUTE*]->(dest:Station)
@@ -81,6 +49,75 @@ namespace PerlaMetro_RouteService.Src.Queries
                     r.EndTime   = coalesce($end, r.EndTime),
                     r.Status    = coalesce($status, r.Status)
             )
+            RETURN stations, rels[0] AS rel
+        ";
+
+        // Reemplazar paradas (stops)
+        public const string UpdateRouteStops =
+            @"
+            // 1. Eliminar relaciones antiguas
+            MATCH path=(o:Station)-[rels:ROUTE*]->(d:Station)
+            WHERE ALL(r IN rels WHERE r.Id = $id)
+            WITH rels
+            FOREACH (r IN rels | DELETE r)
+
+            // 2. Crear estaciones de origen y destino
+            MERGE (s0:Station { name: $origin })
+            MERGE (sLast:Station { name: $destination })
+
+            // 3. Manejo de paradas
+            WITH s0, sLast, $stops AS stopNames
+            UNWIND stopNames AS stopName
+            MERGE (s:Station { name: stopName })
+            WITH s0, sLast, collect(DISTINCT s) AS stopNodes
+
+            // 4. Construir lista completa de estaciones
+            WITH 
+                CASE 
+                    WHEN size(stopNodes) = 0 
+                    THEN [s0, sLast] 
+                    ELSE [s0] + stopNodes + [sLast] 
+                END AS stations
+
+            // 5. Crear relaciones entre pares consecutivos
+            UNWIND range(0, size(stations)-2) AS i
+            WITH stations, stations[i] AS a, stations[i+1] AS b
+            MERGE (a)-[r:ROUTE { Id: $id }]->(b)
+            SET r.StartTime = $start,
+                r.EndTime = $end,
+                r.Status = $status
+            WITH stations, collect(r) AS rels
+            RETURN [n IN stations | n.name] AS stations, rels[0] AS rel
+        ";
+
+        // Cambiar solo origen/destino (manteniendo stops existentes)
+        public const string UpdateRouteEndpoints =
+            @"
+            // Obtener paradas actuales
+            MATCH path=(o:Station)-[rels:ROUTE*]->(d:Station)
+            WHERE ALL(r IN rels WHERE r.Id = $id)
+            WITH rels, [n IN nodes(path) | n.name][1..-1] AS stops
+            // Borrar relaciones viejas
+            FOREACH (r IN rels | DELETE r)
+
+            // Crear nuevo origen/destino
+            MERGE (s0:Station { name: $origin })
+            MERGE (sLast:Station { name: $destination })
+
+            // Reconstruir usando las paradas actuales
+            WITH s0, sLast, stops
+            UNWIND stops AS stopName
+            MERGE (s:Station { name: stopName })
+            WITH s0, sLast, collect(s) AS stopNodes
+            WITH [s0] + stopNodes + [sLast] AS stations
+            UNWIND range(0, size(stations)-2) AS i
+            WITH stations, stations[i] AS a, stations[i+1] AS b
+            MERGE (a)-[r:ROUTE { Id: $id }]->(b)
+            SET r.StartTime = $start,
+                r.EndTime = $end,
+                r.Status = $status
+            WITH stations, collect(r) AS rels
+            WITH [n IN stations | n.name] AS stations, rels
             RETURN stations, rels[0] AS rel
         ";
 

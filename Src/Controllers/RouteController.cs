@@ -66,11 +66,39 @@ namespace PerlaMetro_RouteService.Src.Controllers
             if (existingRoute == null)
                 return NotFound();
 
-            // Merge con AutoMapper (solo actualiza propiedades no nulas)
-            var updatedRoute = _mapper.Map(routeDto, existingRoute);
-            updatedRoute.Id = guid;
+            // 1) Detectar intención del cliente
+            bool originProvided = routeDto.Origin != null;
+            bool destinationProvided = routeDto.Destination != null;
+            bool stopsProvided = routeDto.Stops != null;
+            bool startProvided = routeDto.StartTime.HasValue;
+            bool endProvided = routeDto.EndTime.HasValue;
+            bool statusProvided = routeDto.Status != null;
 
-            var result = await _routeRepository.UpdateRouteAsync(updatedRoute);
+            // (Opcional) log para debug
+            // _logger.LogDebug("UpdateRoute flags: originProvided={originProvided}, stopsProvided={stopsProvided}", originProvided, stopsProvided);
+
+            // 2) Fusionar valores (finalRoute) — solo reemplazar si el cliente lo envió
+            var finalRoute = new Models.Route
+            {
+                Id = guid,
+                Origin = originProvided ? routeDto.Origin! : existingRoute.Origin,
+                Destination = destinationProvided
+                    ? routeDto.Destination!
+                    : existingRoute.Destination,
+                StartTime = startProvided ? routeDto.StartTime!.Value : existingRoute.StartTime,
+                EndTime = endProvided ? routeDto.EndTime!.Value : existingRoute.EndTime,
+                Status = statusProvided ? routeDto.Status! : existingRoute.Status,
+                Stops = stopsProvided ? routeDto.Stops : existingRoute.Stops, // aquí stopsProvided diferencia null vs []
+            };
+
+            // 3) llamar repositorio con flags para que decida la query correcta
+            var result = await _routeRepository.UpdateRouteAsync(
+                finalRoute,
+                originProvided,
+                destinationProvided,
+                stopsProvided
+            );
+
             if (result == null)
                 return StatusCode(500, "An error occurred while updating the route.");
 
