@@ -125,7 +125,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
                     stops = route.Stops ?? new List<string>(),
                     start = route.StartTime.ToString(),
                     end = route.EndTime.ToString(),
-                    status = route.Status,
                 };
                 var cursor = await session.RunAsync(RouteQueries.UpdateRouteStops, parameters);
                 var record = await cursor.SingleAsync();
@@ -141,7 +140,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
                     destination = route.Destination,
                     start = route.StartTime.ToString(),
                     end = route.EndTime.ToString(),
-                    status = route.Status,
                 };
                 var cursor = await session.RunAsync(RouteQueries.UpdateRouteEndpoints, parameters);
                 var record = await cursor.SingleAsync();
@@ -155,7 +153,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
                     id = route.Id,
                     start = route.StartTime.ToString(),
                     end = route.EndTime.ToString(),
-                    status = route.Status,
                 };
                 var cursor = await session.RunAsync(RouteQueries.UpdateRouteProperties, parameters);
                 var record = await cursor.SingleAsync();

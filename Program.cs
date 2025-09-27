@@ -4,41 +4,72 @@ using PerlaMetro_RouteService.Src.Interfaces;
 using PerlaMetro_RouteService.Src.Mappings;
 using PerlaMetro_RouteService.Src.Repositories;
 
-Env.Load();
+// Cargar variables de entorno desde .env (solo en desarrollo)
+if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") != "Production")
+{
+    Env.Load();
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Neo4j connection
+// Configuración de CORS para permitir comunicación con API Main
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+        }
+    );
+});
+
+// Neo4j connection como Singleton
 builder.Services.AddSingleton<ApplicationDbContext>();
 
+// Dependency Injection
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 
+// Controllers y AutoMapper
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(RouteMappingProfile).Assembly);
-builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddSwaggerGen();
+// API Documentation
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc(
+        "v1",
+        new()
+        {
+            Title = "Perla Metro Routes Service API",
+            Version = "v1",
+            Description = "API para gestión de rutas del sistema de transporte Perla Metro",
+        }
+    );
+});
+
+// Logging configuration
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Routes Service API v1");
+        c.RoutePrefix = "swagger"; // Accesible en /swagger
+    });
 }
 
-// Middleware global de errores
-// app.UseHttpsRedirection();
+// Middleware pipeline
+app.UseCors("AllowAll");
+
 app.UseAuthorization();
 app.MapControllers();
-
-// TODO: Mejorar el seeder
-// Seeder inicial (crear constraints en Neo4j)
-using (var scope = app.Services.CreateScope())
-{
-    var neo4j = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    using var session = neo4j.GetSession();
-    await session.RunAsync("CREATE CONSTRAINT IF NOT EXISTS FOR (r:Route) REQUIRE r.Id IS UNIQUE");
-}
 
 app.Run();

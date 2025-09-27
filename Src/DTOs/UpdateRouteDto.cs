@@ -12,6 +12,5 @@ namespace PerlaMetro_RouteService.Src.DTOs
         public TimeSpan? StartTime { get; set; }
         public TimeSpan? EndTime { get; set; }
         public List<string>? Stops { get; set; }
-        public string? Status { get; set; }
     }
 }

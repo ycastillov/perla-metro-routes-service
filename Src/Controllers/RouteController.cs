@@ -72,7 +72,6 @@ namespace PerlaMetro_RouteService.Src.Controllers
             bool stopsProvided = routeDto.Stops != null;
             bool startProvided = routeDto.StartTime.HasValue;
             bool endProvided = routeDto.EndTime.HasValue;
-            bool statusProvided = routeDto.Status != null;
 
             // (Opcional) log para debug
             // _logger.LogDebug("UpdateRoute flags: originProvided={originProvided}, stopsProvided={stopsProvided}", originProvided, stopsProvided);
@@ -87,7 +86,7 @@ namespace PerlaMetro_RouteService.Src.Controllers
                     : existingRoute.Destination,
                 StartTime = startProvided ? routeDto.StartTime!.Value : existingRoute.StartTime,
                 EndTime = endProvided ? routeDto.EndTime!.Value : existingRoute.EndTime,
-                Status = statusProvided ? routeDto.Status! : existingRoute.Status,
+                Status = existingRoute.Status,
                 Stops = stopsProvided ? routeDto.Stops : existingRoute.Stops, // aquí stopsProvided diferencia null vs []
             };
 
