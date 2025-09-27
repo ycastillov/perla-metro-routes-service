@@ -1,16 +1,28 @@
-# 🚇 Perla Metro - Route Service
+# 🚇 Perla Metro - Routes Service
 
-Este microservicio gestiona las **rutas del sistema de metro** para el proyecto *Perla Metro*.  
-Forma parte de la arquitectura basada en microservicios que incluye servicios de **Products**, **Professors**, **Routes**, entre otros, todos consumidos por la API Main.
+Este microservicio gestiona las **rutas del sistema de transporte subterráneo** para el proyecto *Perla Metro*.  
+Forma parte de la **arquitectura orientada a servicios (SOA)** con monolito distribuido que incluye servicios de **Users**, **Tickets**, **Routes** y **Stations**, todos consumidos por la API Main.
+
+---
+
+## 🏗️ Arquitectura y Patrón de Diseño
+
+- **Arquitectura**: SOA (Service-Oriented Architecture) con monolito distribuido
+- **Patrón de diseño**: Repository Pattern con Dependency Injection
+- **Comunicación**: RESTful API con intercambio de datos JSON
+- **Separación de responsabilidades**: Cada servicio maneja su propio dominio de datos
 
 ---
 
 ## 📦 Tecnologías utilizadas
+
 - **.NET 9.0** (ASP.NET Core Web API)
-- **Neo4j Aura Free** como base de datos
-- **Neo4j.Driver** (driver oficial para .NET)
-- **AutoMapper** para el mapeo DTO ↔ Modelo
-- **Docker** (opcional para despliegue)
+- **Neo4j Aura Free** como base de datos en la nube
+- **Neo4j.Driver 5.28.3** (driver oficial para .NET)
+- **AutoMapper 12.0.1** para el mapeo DTO ↔ Modelo
+- **FluentValidation** para validación de datos
+- **DotNetEnv** para manejo de variables de entorno
+- **Docker** 
 
 ---
 
@@ -18,89 +30,200 @@ Forma parte de la arquitectura basada en microservicios que incluye servicios de
 
 ### 1. Clonar el repositorio
 ```bash
-git clone https://github.com/<tu-usuario>/perla-metro-route-service.git
+git clone https://github.com/ycastillov/perla-metro-route-service.git
 cd perla-metro-route-service
 ```
+
 ### 2. Variables de entorno
-Se debe crear un archivo `.env` en la raíz del proyecto con el siguiente contenido
+Crear un archivo `.env` en la raíz del proyecto:
+
 ```bash
-NEO4J_URI=neo4j+s://<your-database-id>.databases.neo4j.io
-NEO4J_USER=neo4j
-NEO4J_PASSWORD=<your-password>
+# Neo4j Aura Configuration
+NEO4J_URI=neo4j+s://458869f7.databases.neo4j.io
+NEO4J_USER=458869f7
+NEO4J_PASSWORD=e_mWCiqvF_DFDFQKgOvPwLKpWmvzRqzXGmqiae3lHvs
+
+# Environment
+ASPNETCORE_ENVIRONMENT=Development
+ASPNETCORE_URLS=http://localhost:5000
 ```
+
 ### 3. Restaurar dependencias
 ```bash
 dotnet restore
 ```
-### 4. Ejecutar en local
+
+### 4. Ejecutar localmente
 ```bash
 dotnet run
 ```
-El servicio quedará disponible en: `http://localhost:5000` con documentación de Swagger en `http://localhost:5000/swagger`
+
+El servicio estará disponible en:
+- **API**: `http://localhost:5000`
+- **Swagger UI**: `http://localhost:5000/swagger`
+- **Health Check**: `http://localhost:5000/health`
 
 ---
 
-## 🚀 Deployment en la nube
-Este servicio debe ser desplegado en un proveedor cloud gratuito, como **Render**.
+## 🚀 Deployment en Render
 
-## Pasos en Render
-### 1. Crear cuenta en Render
-### 2. Conectar el repositorio `perla-metro-routes-service`
-### 3. Configurar un nuevo **Web Service**:
-  - Build Command: `dotnet build`
-  - Start Command: `dotnet run --urls http://0.0.0.0:10000`
-### 4. Agregar las variables de entorno en el panel de Render:
-  - `NEO4J_URI`
-  - `NEO4J_USER`
-  - `NEO4J_PASSWORD`
-### 5. Deploy automático desde la rama `main`.
-Render brindará una URL pública como:
+### Configuración en Render:
+1. **Conectar repositorio**: `perla-metro-routes-service`
+2. **Build Command**: `dotnet publish -c Release -o out`
+3. **Start Command**: `dotnet out/PerlaMetro-RouteService.dll`
+4. **Environment**: Production
+
+### Variables de entorno en Render:
 ```bash
-https://perla-metro-route-service.onrender.com
+NEO4J_URI=neo4j+s://458869f7.databases.neo4j.io
+NEO4J_USER=458869f7
+NEO4J_PASSWORD=_mWCiqvF_DFDFQKgOvPwLKpWmvzRqzXGmqiae3lHvs
+ASPNETCORE_ENVIRONMENT=Production
+```
+
+### URL del servicio desplegado:
+```
+https://perla-metro-routes-service-wf9c.onrender.com
 ```
 
 ---
 
-## 📑 Endpoints principales
-### Crear ruta
-```bash
+## 📑 API Endpoints
+
+### 🔍 Información del servicio
+```http
+GET /
+```
+Respuesta: Información básica del servicio y endpoints disponibles.
+
+### 💚 Health Check
+```http
+GET /health
+```
+Respuesta: Estado del servicio y conectividad.
+
+### 🛣️ Gestión de Rutas
+
+#### Crear ruta
+```http
 POST /api/routes
-```
-Body:
-```bash
+Content-Type: application/json
+
 {
-  "origin": "Antofagasta",
-  "destination": "Calama",
-  "startTime": "12:00:00",
-  "endTime": "15:00:00",
-  "stops": ["Sierra Gorda"],
-  "status": "Active"
+  "origin": "Estación Central",
+  "destination": "Estación Norte",
+  "startTime": "06:00:00",
+  "endTime": "06:45:00",
+  "stops": ["Estación Intermedia 1", "Estación Intermedia 2"]
 }
 ```
-### Obtener todas las rutas
-```bash
+
+#### Obtener todas las rutas
+```http
 GET /api/routes
 ```
-### Obtener ruta por ID
-```bash
+**Nota**: Solo disponible para usuarios con rol Administrador.
+
+#### Obtener ruta por ID
+```http
 GET /api/routes/{guid}
 ```
-### Actualizar ruta
-```bash
+
+#### Actualizar ruta
+```http
 PUT /api/routes/{guid}
+Content-Type: application/json
+
+{
+  "origin": "Estación Central Actualizada",
+  "destination": "Estación Norte",
+  "startTime": "06:15:00",
+  "endTime": "07:00:00",
+  "stops": ["Nueva Estación Intermedia"]
+}
 ```
-### Soft delete de ruta
-```bash
+
+#### Eliminar ruta (Soft Delete)
+```http
 DELETE /api/routes/{guid}
 ```
-Esto no elimina físicamente la ruta, solo cambia su `status` a `"Inactive"`.
+**Importante**: Implementa SOFT DELETE - marca la ruta como inactiva preservando la trazabilidad.
 
 ---
 
-## 🛠️ Desarrollo y convenciones
-- Se siguen las **conventional commits**:
-  - `feat: nueva funcionalidad`
-  - `fix: corrección de bug`
-  - `docs: cambios en la documentación`
-- Todo el código está comentado para mayor claridad.
-- Las queries de Neo4j están centralizadas en `RouteQueries.cs`.
+## 🔒 Seguridad y Validaciones
+
+- **Validación de duplicados**: No permite rutas idénticas
+- **Soft Delete**: Preserva trazabilidad mediante eliminación lógica
+- **Filtros de visualización**: Excluye rutas inactivas en consultas públicas
+- **CORS**: Configurado para permitir comunicación con API Main
+- **Validaciones de negocio**: Horarios coherentes, estaciones válidas
+
+---
+
+## 🗄️ Estructura de Base de Datos (Neo4j)
+
+### Nodos:
+- **Route**: Representa una ruta del sistema
+  - `id` (UUID)
+  - `origin` (string)
+  - `destination` (string)
+  - `startTime` (TimeSpan)
+  - `endTime` (TimeSpan)
+  - `stops` (array de strings)
+  - `status` (Active/Inactive)
+  - `createdAt` (DateTime)
+  - `updatedAt` (DateTime)
+
+---
+
+## 🛠️ Desarrollo
+
+### Conventional Commits
+```bash
+feat: agregar endpoint para filtrar rutas por estado
+fix: corregir validación de horarios
+docs: actualizar documentación de API
+refactor: mejorar estructura de queries Neo4j
+```
+
+### Estructura del proyecto
+```
+PerlaMetro-RouteService/
+├── Src/
+│   ├── Controllers/          # Controladores REST
+│   ├── Models/              # Modelos de dominio
+│   ├── DTOs/                # Data Transfer Objects
+│   ├── Repositories/        # Patrón Repository
+│   ├── Interfaces/          # Interfaces y contratos
+│   ├── Mappings/            # Perfiles de AutoMapper
+│   ├── Infrastructure/      # Conexión DB y servicios
+│   └── Validators/          # Validaciones FluentValidation
+├── appsettings.json
+├── Program.cs
+├── Dockerfile
+└── README.md
+```
+
+### Pruebas locales
+```bash
+# Compilar
+dotnet build
+
+# Ejecutar
+dotnet run
+
+# Ver documentación
+# Abrir http://localhost:5000/swagger en el navegador
+```
+
+---
+
+## 🔄 Integración con API Main
+
+Este servicio será consumido por la **API Main** que coordina todas las operaciones entre servicios. La API Main no posee base de datos propia y actúa como orquestador de servicios.
+
+### Endpoints expuestos para API Main:
+- Gestión completa de rutas (CRUD)
+- Validación de rutas para emisión de tickets
+- Consultas de disponibilidad de rutas
