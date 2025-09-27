@@ -50,9 +50,9 @@ Este servicio debe ser desplegado en un proveedor cloud gratuito, como **Render*
   - Build Command: `dotnet build`
   - Start Command: `dotnet run --urls http://0.0.0.0:10000`
 ### 4. Agregar las variables de entorno en el panel de Render:
-  `NEO4J_URI`
-  `NEO4J_USER`
-  `NEO4J_PASSWORD`
+  - `NEO4J_URI`
+  - `NEO4J_USER`
+  - `NEO4J_PASSWORD`
 ### 5. Deploy automático desde la rama `main`.
 Render brindará una URL pública como:
 ```bash
