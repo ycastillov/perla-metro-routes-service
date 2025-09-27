@@ -47,7 +47,6 @@ namespace PerlaMetro_RouteService.Src.Queries
             FOREACH (r IN rels |
                 SET r.StartTime = coalesce($start, r.StartTime),
                     r.EndTime   = coalesce($end, r.EndTime),
-                    r.Status    = coalesce($status, r.Status)
             )
             RETURN stations, rels[0] AS rel
         ";
