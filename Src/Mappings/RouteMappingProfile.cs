@@ -12,11 +12,11 @@ namespace PerlaMetro_RouteService.Src.Mappings
             CreateMap<CreateRouteDto, Models.Route>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(_ => Guid.NewGuid().ToString()));
 
-            // Actualizar: no toques Id
+            // Actualizar
             CreateMap<UpdateRouteDto, Models.Route>()
                 .ForAllMembers(opt => opt.Condition((src, dest, srcMember) => srcMember != null));
 
-            // Model → DTO
+            // Leer
             CreateMap<Models.Route, RouteDto>();
             CreateMap<Models.Route, InactiveRouteDto>();
         }
