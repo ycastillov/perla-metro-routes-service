@@ -9,12 +9,12 @@ namespace PerlaMetro_RouteService.Src.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class RouteController : ControllerBase
+    public class RoutesController : ControllerBase
     {
         private readonly IRouteRepository _routeRepository;
         private readonly IMapper _mapper;
 
-        public RouteController(IRouteRepository routeRepository, IMapper mapper)
+        public RoutesController(IRouteRepository routeRepository, IMapper mapper)
         {
             _routeRepository = routeRepository;
             _mapper = mapper;
