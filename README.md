@@ -172,8 +172,6 @@ DELETE /api/routes/{guid}
   - `endTime` (TimeSpan)
   - `stops` (array de strings)
   - `status` (Active/Inactive)
-  - `createdAt` (DateTime)
-  - `updatedAt` (DateTime)
 
 ---
 
@@ -198,7 +196,6 @@ PerlaMetro-RouteService/
 │   ├── Interfaces/          # Interfaces y contratos
 │   ├── Mappings/            # Perfiles de AutoMapper
 │   ├── Infrastructure/      # Conexión DB y servicios
-│   └── Validators/          # Validaciones FluentValidation
 ├── appsettings.json
 ├── Program.cs
 ├── Dockerfile
@@ -225,5 +222,3 @@ Este servicio será consumido por la **API Main** que coordina todas las operaci
 
 ### Endpoints expuestos para API Main:
 - Gestión completa de rutas (CRUD)
-- Validación de rutas para emisión de tickets
-- Consultas de disponibilidad de rutas
