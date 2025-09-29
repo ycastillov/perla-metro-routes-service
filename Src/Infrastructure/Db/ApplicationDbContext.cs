@@ -6,11 +6,19 @@ using Neo4j.Driver;
 
 namespace PerlaMetro_RouteService.Src.Infrastructure.Db
 {
+    /// <summary>
+    /// Contexto de la base de datos para la aplicación.
+    /// </summary>
     public class ApplicationDbContext : IAsyncDisposable
     {
         private readonly IDriver _driver;
         private readonly ILogger<ApplicationDbContext> _logger;
 
+        /// <summary>
+        /// Constructor para el contexto de la base de datos.
+        /// </summary>
+        /// <param name="configuration">Configuración de la aplicación.</param>
+        /// <param name="logger">Logger para registrar información.</param>
         public ApplicationDbContext(
             IConfiguration configuration,
             ILogger<ApplicationDbContext> logger
@@ -18,6 +26,7 @@ namespace PerlaMetro_RouteService.Src.Infrastructure.Db
         {
             _logger = logger;
 
+            // Obtener variables de entorno o configuración
             var uri =
                 Environment.GetEnvironmentVariable("NEO4J_URI")
                 ?? configuration.GetConnectionString("Neo4jConnection");
@@ -47,6 +56,7 @@ namespace PerlaMetro_RouteService.Src.Infrastructure.Db
                 );
             }
 
+            // Configurar el driver de Neo4j
             try
             {
                 _driver = GraphDatabase.Driver(uri, AuthTokens.Basic(user, password));
@@ -59,12 +69,18 @@ namespace PerlaMetro_RouteService.Src.Infrastructure.Db
             }
         }
 
+        /// <summary>
+        /// Obtiene una nueva sesión asíncrona para interactuar con la base de datos.
+        /// </summary>
         public IAsyncSession GetSession()
         {
             return _driver.AsyncSession();
         }
 
-        // Método para verificar la conexión
+        /// <summary>
+        /// Verifica la conectividad con la base de datos Neo4j.
+        /// </summary>
+        /// <returns>True si la conectividad es exitosa, de lo contrario false.</returns>
         public async Task<bool> VerifyConnectivityAsync()
         {
             try
@@ -80,6 +96,9 @@ namespace PerlaMetro_RouteService.Src.Infrastructure.Db
             }
         }
 
+        /// <summary>
+        /// Libera los recursos del driver de Neo4j de forma asíncrona.
+        /// </summary>
         public async ValueTask DisposeAsync()
         {
             try

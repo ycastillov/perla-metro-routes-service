@@ -5,13 +5,14 @@ using PerlaMetro_RouteService.Src.Queries;
 
 namespace PerlaMetro_RouteService.Src.Repositories
 {
+    /// <summary>
+    /// Repositorio para gestionar rutas en la base de datos Neo4j.
+    /// </summary>
+    /// <param name="context">Contexto de la base de datos.</param>
     public class RouteRepository(ApplicationDbContext context) : IRouteRepository
     {
         private readonly ApplicationDbContext _context = context;
 
-        // ---------------------------
-        // Crear ruta
-        // ---------------------------
         public async Task<Models.Route> CreateRouteAsync(Models.Route route)
         {
             await using var session = _context.GetSession();
@@ -43,9 +44,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
             return route;
         }
 
-        // ---------------------------
-        // Obtener ruta por ID
-        // ---------------------------
         public async Task<Models.Route?> GetRouteByGuidAsync(string guid)
         {
             await using var session = _context.GetSession();
@@ -70,9 +68,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
             };
         }
 
-        // ---------------------------
-        // Obtener todas las rutas
-        // ---------------------------
         public async Task<IEnumerable<Models.Route>> GetAllRoutesAsync()
         {
             await using var session = _context.GetSession();
@@ -97,9 +92,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
             });
         }
 
-        // ---------------------------
-        // Actualizar ruta
-        // ---------------------------
         public async Task<Models.Route?> UpdateRouteAsync(
             Models.Route route,
             bool originProvided,
@@ -147,7 +139,7 @@ namespace PerlaMetro_RouteService.Src.Repositories
             }
             else
             {
-                // Solo propiedades
+                // Solo actualizar propiedades
                 var parameters = new
                 {
                     id = route.Id,
@@ -160,7 +152,11 @@ namespace PerlaMetro_RouteService.Src.Repositories
             }
         }
 
-        // 🔹 Método auxiliar de mapeo
+        /// <summary>
+        /// Mapea un registro de ruta a un objeto de modelo de ruta.
+        /// </summary>
+        /// <param name="record">Registro de ruta.</param>
+        /// <returns>Objeto de modelo de ruta.</returns>
         private Models.Route? MapRouteRecord(IRecord record)
         {
             if (record == null)
@@ -181,9 +177,6 @@ namespace PerlaMetro_RouteService.Src.Repositories
             };
         }
 
-        // ---------------------------
-        // Eliminar ruta (soft delete)
-        // ---------------------------
         public async Task DeleteRouteAsync(string guid)
         {
             await using var session = _context.GetSession();

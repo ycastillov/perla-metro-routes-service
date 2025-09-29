@@ -27,14 +27,14 @@ builder.Services.AddCors(options =>
 // Neo4j connection como Singleton
 builder.Services.AddSingleton<ApplicationDbContext>();
 
-// Dependency Injection
+// Repositorio de rutas
 builder.Services.AddScoped<IRouteRepository, RouteRepository>();
 
 // Controllers y AutoMapper
 builder.Services.AddControllers();
 builder.Services.AddAutoMapper(typeof(RouteMappingProfile).Assembly);
 
-// API Documentation
+// Api documentation con Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -55,7 +55,7 @@ builder.Logging.AddConsole();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Swagger UI en desarrollo y producción
 if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
 {
     app.UseSwagger();
